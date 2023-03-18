@@ -9,6 +9,12 @@ output:
 
 ## Overview
 
+
+**Oil Spill Data Citation:** Lampinen, Mark (2009). Oil Spill Incident Tracking [ds394]. California Department of Fish and Game, Office of Spill Prevention and Response.
+https://map.dfg.ca.gov/metadata/ds0394.html?5.108.39
+
+**California County Data Citation:** 
+
 ```{r setup, include=TRUE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
@@ -43,3 +49,41 @@ oil_sf <- st_as_sf(oil, coords = c("x", "y"),
 
 ```
 
+## Interactive map of California oil spill locations
+
+```{r}
+## setting tmap mode and map style:
+tmap_mode("view")
+tmap_style("natural")
+
+## mapping oil spill occurrences by CA county
+tm_shape(counties) +
+  tm_polygons(alpha = 0) +
+tm_shape(oil_sf) +
+  tm_dots(col = "salmon") 
+```
+
+**Figure 1:** Here we can observe the locations of oil spill incidents in the state of California. Red dots indicate locations of California oil spill occurances.  
+
+## Choropleth map of inland oil spill locations in California
+
+```{r}
+## including only inland oil spills
+oil_inland <- oil_sf %>% 
+  filter(inlandmari == "Inland")
+
+## joining oil spill data to counties data
+oil_inland_county <- counties %>% 
+  st_join(oil_inland) %>% 
+  ## getting counts of spills by county
+  group_by(name) %>% 
+  summarize(spills = n())
+
+## creating choropleth map of spill counts by county
+ggplot(data = oil_inland_county) +
+  geom_sf(aes(fill = spills)) +
+  theme_void() +
+  scale_fill_gradientn(colors = c("slategray1", "purple4"))
+```
+
+**Figure 2:** This figure displays inland oil spill frequency by California county. Darker purple indicates a higher number of oil spills, while lighter colors indicate a lower number of spills. 
