@@ -1,0 +1,45 @@
+---
+title: "Task 1 - California Oil Spills"
+author: "Max Settineri"
+date: "2023-03-18"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+## Overview
+
+```{r setup, include=TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(janitor)
+library(here)
+library(sf)
+library(tmap)
+library(tmaptools)
+library(terra)
+```
+
+## Wrangling oil spill and county data
+
+```{r}
+## reading in oil spill data
+oil <- read_csv(here("data/Oil_Spill_Incident_Tracking_[ds394].csv")) %>% 
+  clean_names() 
+  
+## reading in county shapefile data and keeping only county name and geometry
+counties <- read_sf(here("data/CA_Counties_TIGER2016.shp")) %>% 
+  clean_names() %>% 
+  select(name)
+
+## converting oil spill data to sf
+oil_sf <- st_as_sf(oil, coords = c("x", "y"),
+                   crs = st_crs(counties)) # setting oil crs to match counties data
+
+## checking to make sure crs matches
+# st_crs(counties)
+# st_crs(oil_sf)
+
+```
+
