@@ -1,0 +1,33 @@
+---
+title: "Task 2 - Willamette Falls Fish Passage"
+author: "Max Settineri"
+date: "2023-03-19"
+output: 
+  html_document:
+    code_folding: hide
+    toc: yes
+    theme: lumen
+---
+
+## Introduction
+
+```{r setup, include=TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(janitor)
+library(here)
+library(lubridate)
+library(tsibble)
+library(fable)
+library(feasts)
+```
+
+This report...
+
+#### Data
+
+
+#### Study site
+
+
