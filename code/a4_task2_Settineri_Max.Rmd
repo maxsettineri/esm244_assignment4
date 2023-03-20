@@ -1,15 +1,20 @@
 ---
 title: "Task 2 - Willamette Falls Fish Passage"
 author: "Max Settineri"
-date: "2023-03-19"
+date: "2023-03-15"
 output: 
   html_document:
     code_folding: hide
-    toc: yes
+    toc: true
+    toc_float: true
     theme: lumen
 ---
 
-## Introduction
+# Introduction {.tabset .tabset_pills}
+
+This report explores time series data from the Willamette Falls fish ladder passage on the Willamette River in Oregon. The data used in this analysis are from the Columbia River Data Access in Real Time (DART) and collected by the Oregon Department of Fish and Wildlife (ODFW). Counts of fish species were gathered at the fish ladder using video cameras to record data 24/7. This analysis focuses on coho (*Oncorhynchus kisutch*), jack coho, and steelhead (*Oncorhynchus mykiss*) salmon between 2001 and 2010. "Jack" coho salmon are males that reach sexual maturation and return to spawn in freshwater one year earlier than full-size adult males. 
+
+**Data source:** Columbia Basin Research, University of Washington. 2023. DART Adult Passage Graphics & Text. http://www.cbr.washington.edu/dart/query/adult_graph_text
 
 ```{r setup, include=TRUE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
@@ -25,6 +30,26 @@ library(cowplot)
 library(calecopal)
 ```
 
+#### {.tabset .tabset_pills}
+
+##### Study site
+
+![A map of Willamette Falls fish ladder location. Credit: *U.S. Department of Defense*](fishladder.jpeg)
+
+##### Coho salmon
+
+![Coho salmon. Credit: *NOAA Fisheries*](coho.jpeg)
+
+##### Steelhead
+
+![Steelhead. Credit: *NOAA Fisheries*](steelhead.jpeg)
+
+# Time series analysis and visualizations {.tabset .tabset_pills}
+
+## Original time series 
+
+### Daily fish counts by species
+
 ```{r}
 ## reading in and cleaning up the data
 fish <- read_csv(here("data/willamette_fish_passage.csv")) %>% 
@@ -37,21 +62,7 @@ fish <- read_csv(here("data/willamette_fish_passage.csv")) %>%
   mutate(date = mdy(date)) %>% 
   ## converting data frame to a tsibble
   as_tsibble(key = NULL, index = date)
-```
 
-#### Data
-
-This report explores time series data from the Willamette Falls fish ladder passage on the Willamette River in Oregon. The data used in this analysis are from the Columbia River Data Access in Real Time (DART) and collected by the Oregon Department of Fish and Wildlife (ODFW). Fish counting occurs at the fish ladder using video cameras to record data 24/7. This analysis focuses on coho (*Oncorhynchus kisutch*), jack coho, and steelhead (*Oncorhynchus mykiss*) salmon between 2001 and 2010. "Jack" coho salmon are males that reach sexual maturation and return to spawn in freshwater one year earlier than full-size adult males. 
-
-**Data source:** Columbia Basin Research, University of Washington. 2023. DART Adult Passage Graphics & Text. http://www.cbr.washington.edu/dart/query/adult_graph_text
-
-#### Study site
-
-![Willamette Falls location. Credit: *San Francisco Chronicle*](falls_map.jpeg)
-
-## Original time series
-
-```{r}
 ## creating a longer df with single observations for each fish species
 fish_longer <- fish %>% 
   pivot_longer(cols = 2:4, names_to = "species", values_to = "count") %>% 
@@ -77,6 +88,9 @@ coho_plot <- ggplot(data = coho, aes(x = date, y = count, color = species)) +
   labs(x = element_blank(), 
        y = element_blank()) +
   ylim(0, 1300) +
+  scale_x_date(limits = as.Date(c('2001-01-01', '2010-12-31')),
+               date_breaks = "1 year",
+               date_labels = "%Y") +
   scale_color_manual(values = "salmon") +
   theme_bw() +
   theme(
@@ -94,6 +108,9 @@ jack_plot <- ggplot(data = jack, aes(x = date, y = count, color = species)) +
   labs(x = element_blank(), 
        y = "Daily fish count") +
   ylim(0, 1300) +
+  scale_x_date(limits = as.Date(c('2001-01-01', '2010-12-31')),
+               date_breaks = "1 year",
+               date_labels = "%Y") +
   scale_color_manual(values = "darksalmon") +
   theme_bw() +
   theme(
@@ -111,6 +128,9 @@ steelhead_plot <- ggplot(data = steelhead, aes(x = date, y = count, color = spec
   labs(x = element_blank(), 
        y = element_blank()) +
   ylim(0, 1300) +
+  scale_x_date(limits = as.Date(c('2001-01-01', '2010-12-31')),
+               date_breaks = "1 year",
+               date_labels = "%Y") +
   scale_color_manual(values = "aquamarine3") +
   theme_bw() +
   theme(
@@ -127,15 +147,18 @@ plot_grid(coho_plot, jack_plot, steelhead_plot,
           ncol = 1)
 ```
 
-**Figure 3** displays daily fish counts for coho, jack coho, and steelhead salmon from 2001 through 2010 at the Willamette Falls fish ladder. 
+**Figure 1** displays daily fish counts for coho, jack coho, and steelhead salmon from 2001 through 2010 at the Willamette Falls fish ladder. 
 
-**Takeaways**
-- Steelhead have a higher abundance at Willamette Falls than Coho, although there were notable spikes in Coho observations in 2009 and 2010
-- Figure 3 demonstrates seasonal variation in when each salmon species passes through the fish ladder
-  - Coho and jack coho are present during a small window in September through November each year
-  - Steelhead passage occurs over a longer duration, with most observations coming between January and August
+**Takeaways:**
+
+- Steelhead have a higher abundance than coho and jack coho at Willamette Falls, although there were notable spikes in Coho observations in 2009 and 2010
+- Steelhead populations have remained fairly stable from 2001 to 2010, while coho populations appear to be increasing
+- There is seasonal variation in when each salmon species passes through the fish ladder
+
 
 ## Seasonplots
+
+### Seasonal trends in fish counts
 
 ```{r}
 
@@ -146,7 +169,7 @@ coho_seasonplot <- coho %>%
   facet_wrap(~species, strip.position = "top") +
   labs(x = element_blank(),
        y = element_blank()) +
-  theme_classic() +
+  theme_bw() +
   scale_x_date(date_breaks = "1 month",
                date_labels = "%b") +
   ylim(0, 1300) +
@@ -164,7 +187,7 @@ jack_seasonplot <- jack %>%
   facet_wrap(~species, strip.position = "top") +
   labs(x = element_blank(),
        y = element_blank()) +
-  theme_classic() +
+  theme_bw() +
   scale_x_date(date_breaks = "1 month",
                date_labels = "%b") +
   ylim(0, 1300) +
@@ -182,7 +205,7 @@ steelhead_seasonplot <- steelhead %>%
   facet_wrap(~species, strip.position = "top") +
   labs(x = element_blank(),
        y = element_blank()) +
-  theme_classic() +
+  theme_bw() +
   scale_x_date(date_breaks = "1 month",
                date_labels = "%b") +
   ylim(0, 1300) +
@@ -210,13 +233,52 @@ plot_labs <- ggdraw() +
 combined_legend <- get_legend(coho_seasonplot +
                                 theme(legend.position = "right"))
 
-## adding the y axis label to the combined plot
+## adding the y axis label and legend to the combined plot
 plot_grid(plot_labs, seasonplot, combined_legend,
           ncol = 3, 
-          rel_widths = c(0.07, 1, 0.2),
+          rel_widths = c(0.07, 1, 0.15),
           axis = "tbl")
 ```
 
+**Figure 2** shows monthly trends in salmon observations at the Willamette Falls fish ladder by species. Each line represents a single year of data from 2001 to 2010. 
 
-## Annual counts by species
+**Takeaways:**
 
+- There are clear seasonal trends in salmon observations at the fish ladder:
+  - Coho and jack coho are present during a small window, with most observations coming in September and October
+  - Steelhead passage occurs over a longer duration, with most observations coming between January and August
+
+## Yearly totals
+
+### Counts of fish species by year
+
+
+```{r}
+## creating a new df with annual total counts by species
+fish_counts_yearly <- fish_longer %>% 
+  index_by(year = ~year(.)) %>% 
+  group_by(species) %>% 
+  summarize(yearly_counts = sum(count))
+
+## visualizing annual fish counts
+ggplot(data = fish_counts_yearly, aes(x = year, y = yearly_counts)) +
+  geom_line(size = 1, aes(color = species)) +
+  theme_bw() +
+  scale_color_manual(values = c("salmon", "darksalmon", "aquamarine3")) +
+  theme(legend.title = element_blank()) +
+  labs(x = element_blank(),
+       y = "Annual fish counts") +
+  scale_x_continuous(breaks = seq(from = 2001, to = 2010, by = 1),
+                     expand = c(0,0)) +
+  theme(
+    axis.title.y = element_text(face = 'bold', vjust = 2),
+    axis.text.x = element_text(face = 'bold'))
+```
+
+**Figure 3** displays total counts of coho (red), jack coho (orange), and steelhead (green) salmon passing through the Willamette Falls fish ladder per year. 
+
+**Takeaways:**
+
+- While steelhead observations have shown volatility, they have a higher overall abundance for all study years with the exception of 2009 when coho were more abundant
+- Jack coho observations have remained stable and low across all study years
+- Coho observations were only slightly higher than jack coho from 2001-2008, but there was a spike in coho abundance in 2009 and 2010
