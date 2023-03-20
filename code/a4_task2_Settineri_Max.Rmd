@@ -21,13 +21,202 @@ library(lubridate)
 library(tsibble)
 library(fable)
 library(feasts)
+library(cowplot)
+library(calecopal)
 ```
 
-This report...
+```{r}
+## reading in and cleaning up the data
+fish <- read_csv(here("data/willamette_fish_passage.csv")) %>% 
+  clean_names() %>% 
+  ## including only our 3 fish types of interest
+  select(date, steelhead, coho, jack_coho) %>% 
+  ## replacing NA values with 0
+  replace(is.na(.), 0) %>% 
+  ## converting date column to date class
+  mutate(date = mdy(date)) %>% 
+  ## converting data frame to a tsibble
+  as_tsibble(key = NULL, index = date)
+```
 
 #### Data
 
+This report explores time series data from the Willamette Falls fish ladder passage on the Willamette River in Oregon. The data used in this analysis are from the Columbia River Data Access in Real Time (DART) and collected by the Oregon Department of Fish and Wildlife (ODFW). Fish counting occurs at the fish ladder using video cameras to record data 24/7. This analysis focuses on coho (*Oncorhynchus kisutch*), jack coho, and steelhead (*Oncorhynchus mykiss*) salmon between 2001 and 2010. "Jack" coho salmon are males that reach sexual maturation and return to spawn in freshwater one year earlier than full-size adult males. 
+
+**Data source:** Columbia Basin Research, University of Washington. 2023. DART Adult Passage Graphics & Text. http://www.cbr.washington.edu/dart/query/adult_graph_text
 
 #### Study site
 
+![Willamette Falls location. Credit: *San Francisco Chronicle*](falls_map.jpeg)
+
+## Original time series
+
+```{r}
+## creating a longer df with single observations for each fish species
+fish_longer <- fish %>% 
+  pivot_longer(cols = 2:4, names_to = "species", values_to = "count") %>% 
+  mutate(species = case_when(
+    species == "coho" ~ "Coho",
+    species == "jack_coho" ~ "Jack Coho", 
+    species == "steelhead" ~ "Steelhead"))
+
+## creating subsets of the tsibble df by species to plot separately for enhanced plot customization
+coho <- fish_longer %>% 
+  filter(species == "Coho")
+
+jack <- fish_longer %>% 
+  filter(species == "Jack Coho")
+
+steelhead <- fish_longer %>% 
+  filter(species == "Steelhead")
+
+## plotting coho time series plot of daily fish counts
+coho_plot <- ggplot(data = coho, aes(x = date, y = count, color = species)) +
+  geom_line() +
+  facet_wrap(~species) +
+  labs(x = element_blank(), 
+       y = element_blank()) +
+  ylim(0, 1300) +
+  scale_color_manual(values = "salmon") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor.y = element_blank(),
+    strip.text = element_text(face = "bold"),
+    strip.background = element_rect(fill = "salmon"),
+    legend.position = "none"
+  )
+
+## plotting jack coho time series plot of daily fish counts
+jack_plot <- ggplot(data = jack, aes(x = date, y = count, color = species)) +
+  geom_line() +
+  facet_wrap(~species) +
+  labs(x = element_blank(), 
+       y = "Daily fish count") +
+  ylim(0, 1300) +
+  scale_color_manual(values = "darksalmon") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor.y = element_blank(),
+    strip.text = element_text(face = "bold"),
+    strip.background = element_rect(fill = "darksalmon"),
+    legend.position = "none"
+  )
+
+## plotting jack coho time series plot of daily fish counts
+steelhead_plot <- ggplot(data = steelhead, aes(x = date, y = count, color = species)) +
+  geom_line() +
+  facet_wrap(~species) +
+  labs(x = element_blank(), 
+       y = element_blank()) +
+  ylim(0, 1300) +
+  scale_color_manual(values = "aquamarine3") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor.y = element_blank(),
+    strip.text = element_text(face = "bold"),
+    strip.background = element_rect(fill = "aquamarine3"),
+    legend.position = "none"
+  )
+
+## combining plots using cowplot
+plot_grid(coho_plot, jack_plot, steelhead_plot,
+          align = "v",
+          ncol = 1)
+```
+
+**Figure 3** displays daily fish counts for coho, jack coho, and steelhead salmon from 2001 through 2010 at the Willamette Falls fish ladder. 
+
+**Takeaways**
+- Steelhead have a higher abundance at Willamette Falls than Coho, although there were notable spikes in Coho observations in 2009 and 2010
+- Figure 3 demonstrates seasonal variation in when each salmon species passes through the fish ladder
+  - Coho and jack coho are present during a small window in September through November each year
+  - Steelhead passage occurs over a longer duration, with most observations coming between January and August
+
+## Seasonplots
+
+```{r}
+
+## making season plots for each salmon species
+coho_seasonplot <- coho %>% 
+  gg_season(y = count,
+            pal = cal_palette("bigsur")) +
+  facet_wrap(~species, strip.position = "top") +
+  labs(x = element_blank(),
+       y = element_blank()) +
+  theme_classic() +
+  scale_x_date(date_breaks = "1 month",
+               date_labels = "%b") +
+  ylim(0, 1300) +
+  theme(
+    axis.title = element_text(face = 'bold'),
+    panel.grid.minor.y = element_blank(),
+    strip.text = element_text(face = 'bold'),
+    strip.background = element_rect(fill = 'salmon'),
+    legend.position = "none"
+  )
+
+jack_seasonplot <- jack %>% 
+  gg_season(y = count,
+            pal = cal_palette("bigsur")) +
+  facet_wrap(~species, strip.position = "top") +
+  labs(x = element_blank(),
+       y = element_blank()) +
+  theme_classic() +
+  scale_x_date(date_breaks = "1 month",
+               date_labels = "%b") +
+  ylim(0, 1300) +
+  theme(
+    axis.title = element_text(face = 'bold'),
+    panel.grid.minor.y = element_blank(),
+    strip.text = element_text(face = 'bold'),
+    strip.background = element_rect(fill = 'darksalmon'),
+    legend.position = "none"
+  )
+
+steelhead_seasonplot <- steelhead %>% 
+  gg_season(y = count,
+            pal = cal_palette("bigsur")) +
+  facet_wrap(~species, strip.position = "top") +
+  labs(x = element_blank(),
+       y = element_blank()) +
+  theme_classic() +
+  scale_x_date(date_breaks = "1 month",
+               date_labels = "%b") +
+  ylim(0, 1300) +
+  theme(
+    axis.title = element_text(face = 'bold'),
+    panel.grid.minor.y = element_blank(),
+    strip.text = element_text(face = 'bold'),
+    strip.background = element_rect(fill = 'aquamarine3'),
+    legend.position = "none"
+  )
+
+## combing the three seasonplots using cowplot
+seasonplot <- plot_grid(coho_seasonplot, jack_seasonplot, steelhead_seasonplot,
+          align = "v",
+          ncol = 1)
+
+## making a y axis label for the combined plot
+plot_labs <- ggdraw() +
+  draw_label(
+    "Daily fish count",
+    fontface = "bold",
+    angle = 90) 
+
+## storing a legend to add to the combined plot
+combined_legend <- get_legend(coho_seasonplot +
+                                theme(legend.position = "right"))
+
+## adding the y axis label to the combined plot
+plot_grid(plot_labs, seasonplot, combined_legend,
+          ncol = 3, 
+          rel_widths = c(0.07, 1, 0.2),
+          axis = "tbl")
+```
+
+
+## Annual counts by species
 
