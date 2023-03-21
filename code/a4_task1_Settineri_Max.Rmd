@@ -5,15 +5,18 @@ date: "2023-03-18"
 output: 
   html_document:
     code_folding: hide
+    theme: darkly
+    
 ---
 
 ## Overview
 
+This analysis explores oil spill incidents in California. Oil spill incident data are converted to spatial features and mapped over California's county borders in an interactive Tmap. The data are also presented in a choropleth map to observe oil spill frequency by county. 
 
 **Oil Spill Data Citation:** Lampinen, Mark (2009). Oil Spill Incident Tracking [ds394]. California Department of Fish and Game, Office of Spill Prevention and Response.
 https://map.dfg.ca.gov/metadata/ds0394.html?5.108.39
 
-**California County Data Citation:** 
+**California County Boundaries** are sourced from the California Open Data Portal at: https://data.ca.gov/dataset/ca-geographic-boundaries/resource/b0007416-a325-4777-9295-368ea6b710e6
 
 ```{r setup, include=TRUE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
@@ -83,7 +86,7 @@ oil_inland_county <- counties %>%
 ggplot(data = oil_inland_county) +
   geom_sf(aes(fill = spills)) +
   theme_void() +
-  scale_fill_gradientn(colors = c("slategray1", "purple4"))
+  scale_fill_gradientn(colors = c("mistyrose", "brown3", "purple4"))
 ```
 
 **Figure 2:** This figure displays inland oil spill frequency by California county. Darker purple indicates a higher number of oil spills, while lighter colors indicate a lower number of spills. 
