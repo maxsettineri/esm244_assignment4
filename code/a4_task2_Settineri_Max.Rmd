@@ -8,6 +8,7 @@ output:
     toc: true
     toc_float: true
     theme: lumen
+    smooth_scroll: yes
 ---
 
 # Introduction {.tabset .tabset_pills}
@@ -38,7 +39,7 @@ library(calecopal)
 
 ##### Coho salmon
 
-![Coho salmon. Credit: *NOAA Fisheries*](coho.jpeg)
+![Coho salmon. Credit: *Dan Bennett, Center for Biological Diversity*](coho.jpeg)
 
 ##### Steelhead
 
